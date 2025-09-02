@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using WaRazorDB.Data;
 using WaRazorDB.Models;
 
@@ -45,6 +46,35 @@ namespace WaRazorDB.Pages
         {
             if (!ModelState.IsValid)
             {
+                return Page();
+            }
+
+            // Validación de palabras mínimas y solo letras/números (incluyendo acentos)
+            if (!Regex.IsMatch(Tarea.nombreTarea, @"^[\p{L}\p{N}]+(\s+[\p{L}\p{N}]+)+$"))
+            {
+                ModelState.AddModelError("Tarea.nombreTarea", "El nombre debe contener al menos dos palabras con letras y números, sin símbolos especiales.");
+                return Page();
+            }
+
+            // Dividir el nombre en palabras
+            var palabras = Tarea.nombreTarea.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (palabras.Length < 2)
+            {
+                ModelState.AddModelError("Tarea.nombreTarea", "El nombre debe contener al menos dos palabras.");
+                return Page();
+            }
+
+            // Evitar letras repetidas muchas veces seguidas
+            if (Regex.IsMatch(Tarea.nombreTarea, @"([A-Za-z0-9])\1{2,}"))
+            {
+                ModelState.AddModelError("Tarea.nombreTarea", "No se permiten letras repetidas muchas veces consecutivas.");
+                return Page();
+            }
+
+            // Validación de la fecha
+            if (Tarea.fechaVencimiento < DateTime.Today)
+            {
+                ModelState.AddModelError("Tarea.fechaVencimiento", "La fecha no puede ser menor a la actual.");
                 return Page();
             }
 

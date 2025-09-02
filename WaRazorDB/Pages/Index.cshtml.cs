@@ -19,11 +19,27 @@ namespace WaRazorDB.Pages
             _context = context;
         }
 
-        public IList<Tarea> Tarea { get;set; } = default!;
+        public IList<Tarea> Tarea { get; set; } = new List<Tarea>();
 
+
+
+        [BindProperty(SupportsGet = true)]
+        public int PageNumber { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int PageSize { get; set; } = 5; // Por defecto 5 tareas por página
+
+        public int TotalPages { get; set; }
         public async Task OnGetAsync()
         {
-            Tarea = await _context.Tareas.ToListAsync();
+            int totalTareas = await _context.Tareas.CountAsync();
+            TotalPages = (int)Math.Ceiling(totalTareas / (double)PageSize);
+
+            Tarea = await _context.Tareas
+                .OrderBy(t => t.fechaVencimiento)
+                .Skip((PageNumber - 1) * PageSize)
+                .Take(PageSize)
+                .ToListAsync();
         }
     }
 }
